@@ -413,7 +413,8 @@ export class CombatSystem {
 
   _canUnitTraverseTile(team, tileX, tileY) {
     const building = this._getBuildingAt(tileX, tileY);
-    return this._isFriendlyWall(building, team);
+    if (!building) return false;
+    return building.team === team;
   }
 
   _getBuildingAt(tileX, tileY) {
@@ -427,11 +428,6 @@ export class CombatSystem {
       tileX >= b.tileX && tileX < b.tileX + b.def.size.w &&
       tileY >= b.tileY && tileY < b.tileY + b.def.size.h
     ) ?? null;
-  }
-
-  _isFriendlyWall(building, team) {
-    if (!building || building.team !== team) return false;
-    return building.def.id === 'wall' || building.def.id === 'reinforced_wall';
   }
 
   // ─────────────────────────────────────────────
