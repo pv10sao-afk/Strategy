@@ -14,15 +14,17 @@ import { bus } from '../core/EventBus.js';
  *   'army'  — управління юнітами + кнопки команд
  */
 export class UIManager {
-  constructor(entitiesDef, state, renderer) {
+  constructor(entitiesDef, state, renderer, config = {}) {
     this.defs     = entitiesDef;
     this.state    = state;
     this.renderer = renderer;
+    this.instantBuild = config.instantBuild ?? true;
 
     // ── UI стан ────────────────────────────────────
     /** @type {'idle'|'build'|'move'} */
     this._inputMode      = 'idle';
     this._buildDefId     = null;        // який тип будівлі ставимо
+    this._previewBuildTile = null;      // Кеш координат для другого тапу
     this._activeTab      = 'build';
 
     /** @type {Set<string>} */
@@ -64,8 +66,8 @@ export class UIManager {
     bus.on('ui:notification',   (msg)           => this._showNotification(msg));
     bus.on('building:ready',    ()              => this._refreshBuildCosts());
     bus.on('training:progress', (d)             => this._onTrainingProgress(d));
-    bus.on('ai:waveStarted',    ({ unitCount }) =>
-      this._showNotification({ text: `⚠ Атака! ${unitCount} ворогів ідуть!`, type: 'warning' }));
+    bus.on('ai:waveStarted',    ({ unitCount, type }) =>
+      this._showNotification({ text: `⚠ ${type ?? 'Атака'}! ${unitCount} ворогів ідуть!`, type: 'warning' }));
 
     // ── Кнопки вкладок ────────────────────────────
     this.$tabBuild?.addEventListener('click', () => this._switchTab('build'));
@@ -350,49 +352,109 @@ export class UIManager {
     let isPanning = false;
     let activeMouseButton = null;
 
+    // Стан для зуму
+    let initialPinchDist = 0;
+    let initialZoom = 1.0;
+    let pinchCenter = { x: 0, y: 0 };
+    let isPinching = false;
+
     const onStart = (x, y) => {
       touchStartX    = x;
       touchStartY    = y;
       touchStartTime = Date.now();
       isPanning      = false;
+      isPinching     = false;
     };
 
     const onMove = (x, y) => {
+      if (isPinching) return;
       const dx = x - touchStartX, dy = y - touchStartY;
       if (!isPanning && Math.hypot(dx, dy) > 10) {
         isPanning = true;
       }
       if (isPanning) {
-        this.renderer.panCamera(-dx * 0.6, -dy * 0.6);
+        // Швидкість панорамування масштабується відповідно до зуму
+        const z = this.renderer.zoom;
+        this.renderer.panCamera(-dx / z, -dy / z);
         touchStartX = x;
         touchStartY = y;
       }
     };
 
     const onEnd = (x, y, button = 0) => {
+      if (isPinching) return;
       const dt = Date.now() - touchStartTime;
       if (!isPanning && dt < 400) this._onCanvasTap(x, y, button);
     };
 
-    // Touch
+    // ── Mouse Wheel (Zoom) ──────────────────────
+    this.$canvas?.addEventListener('wheel', e => {
+      e.preventDefault();
+      const rect = this.$canvas.getBoundingClientRect();
+      const relX = e.clientX - rect.left;
+      const relY = e.clientY - rect.top;
+      
+      const zoomSpeed = 0.15;
+      const zDelta = Math.sign(e.deltaY) < 0 ? zoomSpeed : -zoomSpeed;
+      const oldZoom = this.renderer.zoom;
+      this.renderer.setZoom(oldZoom * (1 + zDelta), { x: relX, y: relY });
+    }, { passive: false });
+
+    // ── Touch ───────────────────────────────────
     this.$canvas?.addEventListener('touchstart', e => {
       e.preventDefault();
-      const t = e.touches[0];
-      onStart(t.clientX, t.clientY);
+      if (e.touches.length === 2) {
+        // Pinch start
+        isPinching = true;
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        initialPinchDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        initialZoom = this.renderer.zoom;
+        
+        const rect = this.$canvas.getBoundingClientRect();
+        pinchCenter = {
+          x: ((t1.clientX + t2.clientX) / 2) - rect.left,
+          y: ((t1.clientY + t2.clientY) / 2) - rect.top
+        };
+      } else if (e.touches.length === 1) {
+        const t = e.touches[0];
+        onStart(t.clientX, t.clientY);
+      }
     }, { passive: false });
 
     this.$canvas?.addEventListener('touchmove', e => {
       e.preventDefault();
-      const t = e.touches[0];
-      onMove(t.clientX, t.clientY);
+      if (e.touches.length === 2) {
+        // Pinch move
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        const scale = dist / initialPinchDist;
+        this.renderer.setZoom(initialZoom * scale, pinchCenter);
+      } else if (e.touches.length === 1) {
+        const t = e.touches[0];
+        onMove(t.clientX, t.clientY);
+      }
     }, { passive: false });
 
     this.$canvas?.addEventListener('touchend', e => {
+      if (e.touches.length > 0) {
+        // Якщо відпустили 1 палець з двох, скидаємо початок для панорамування
+        const t = e.touches[0];
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        return;
+      }
+      if (isPinching) {
+        isPinching = false;
+        return; // Запобігаємо кліку після зуму
+      }
       const t = e.changedTouches[0];
       onEnd(t.clientX, t.clientY);
     });
 
-    // Mouse (десктопне тестування)
+    // ── Mouse ───────────────────────────────────
+
     let mDown = false;
     this.$canvas?.addEventListener('contextmenu', e => e.preventDefault());
     this.$canvas?.addEventListener('mousedown', e => {
@@ -420,23 +482,80 @@ export class UIManager {
     const relY  = screenY - rect.top;
     const tile  = this.renderer.screenToTile(relX, relY);
 
-    if (button === 2) {
+      return;
+    }
+
+    // ── Цільова атака (тап по ворогу лівою/правою коли вибрана армія) ──
+    if (this._selectedUnitIds.size > 0 && this._inputMode !== 'build') {
+      const isRightClick = button === 2;
+      let targetId = null;
+      let targetTeam = 'enemy';
+
+      // Перевіряємо ворожих юнітів
+      const ts = this.renderer.tileSize;
+      for (const [id, t] of this.state.enemyUnits) {
+        if (t.isDead) continue;
+        const tx = t.x / ts, ty = t.y / ts;
+        if (Math.abs(tx - tile.x) < 0.8 && Math.abs(ty - tile.y) < 0.8) {
+          targetId = id; break;
+        }
+      }
+      // Перевіряємо ворожі будівлі
+      if (!targetId) {
+        for (const [id, t] of this.state.enemyBuildings) {
+          if (!t.isDestroyed && tile.x >= t.tileX && tile.x < t.tileX + t.def.size.w &&
+              tile.y >= t.tileY && tile.y < t.tileY + t.def.size.h) {
+            targetId = id; break;
+          }
+        }
+      }
+
+      if (targetId) {
+        const ids = [...this._selectedUnitIds];
+        bus.emit('cmd:attackOrder', { unitIds: ids, targetId, targetTeam });
+        this._inputMode = 'idle';
+        this.$panel?.classList.remove('panel-peek');
+        this._showNotification({ text: `⚔ Пряма атака на ціль!`, type: 'success' });
+        this._setModeBar(`Атака на вказану ціль`, 'attack');
+        this._refreshArmyState();
+        return;
+      }
+    }
+
+    // ── Переміщення (явний наказ через кнопку пульта або ПКМ) ──
+    if (this._inputMode === 'move' || button === 2) {
       if (this._selectedUnitIds.size === 0) return;
       const ids = [...this._selectedUnitIds];
       bus.emit('cmd:moveOrder', { tileX: tile.x, tileY: tile.y, unitIds: ids });
       this._inputMode = 'idle';
       this.$panel?.classList.remove('panel-peek');
       this._showNotification({ text: `🚶 ${ids.length} юнітів рушили до точки`, type: 'success' });
-      this._setModeBar(`ПКМ: маршрут задано для ${ids.length} юнітів`, 'select');
+      this._setModeBar(`Маршрут задано для ${ids.length} юнітів`, 'select');
       this._refreshArmyState();
       return;
     }
 
     // ── Режим будівництва ──────────────────────
     if (this._inputMode === 'build' && this._buildDefId) {
-      bus.emit('cmd:buildBuilding', { defId: this._buildDefId, tileX: tile.x, tileY: tile.y });
-      // Зберігаємо режим для швидкого множинного будівництва
-      // Скасовуємо лише по кнопці "Скасувати"
+      if (this.instantBuild) {
+        bus.emit('cmd:buildBuilding', { defId: this._buildDefId, tileX: tile.x, tileY: tile.y });
+      } else {
+        // Двоетапне будівництво (Підтвердження повторним тапом)
+        if (!this._previewBuildTile || this._previewBuildTile.x !== tile.x || this._previewBuildTile.y !== tile.y) {
+          // Перший тап - показати Preview та запам'ятати
+          this._previewBuildTile = tile;
+          const def = this.defs.buildings[this._buildDefId];
+          if (this.renderer.setBuildPreview) this.renderer.setBuildPreview(def, tile);
+          
+          this._showNotification({ text: `Тапніть ще раз на цю клітинку для підтвердження`, type: 'info' });
+          return; // Чекаємо другий тап
+        } else {
+          // Другий тап сюди ж - будуємо
+          bus.emit('cmd:buildBuilding', { defId: this._buildDefId, tileX: tile.x, tileY: tile.y });
+          this._previewBuildTile = null;
+          if (this.renderer.setBuildPreview) this.renderer.setBuildPreview(null);
+        }
+      }
       return;
     }
 

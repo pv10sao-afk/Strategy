@@ -127,6 +127,7 @@ button {
     radial-gradient(circle at top, rgba(241,196,15,0.12), transparent 28%),
     radial-gradient(circle at 80% 20%, rgba(52,152,219,0.18), transparent 24%),
     linear-gradient(145deg, #090d13 0%, #111827 50%, #1b2432 100%);
+  overflow-y: auto;
 }
 
 .start-shell {
@@ -137,6 +138,7 @@ button {
   background: rgba(15, 20, 28, 0.86);
   box-shadow: 0 22px 60px rgba(0,0,0,0.48);
   backdrop-filter: blur(16px);
+  margin: auto; /* Допомагає центрувати коли контейнер більший за екран при overflow-y */
 }
 
 .start-badge {
@@ -171,6 +173,15 @@ button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-top: 24px;
+}
+
+@media (max-width: 650px) {
+  .start-menu {
+    align-items: flex-start;
+  }
+  .start-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .difficulty-card {

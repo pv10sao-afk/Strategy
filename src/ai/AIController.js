@@ -31,6 +31,9 @@ export class AIController {
 
     const zones = config.map.zones;
     this._zone = zones.enemy;
+
+    /** @type {'balanced'|'rush'|'siege'|'harass'} */
+    this.currentStrategy = 'balanced';
   }
 
   update(dtSec) {
@@ -98,6 +101,8 @@ export class AIController {
 
     if (this._cleanupWeakBuildings()) return;
 
+    this._updateStrategy();
+
     const desired = this._getDesiredCounts();
     const buildQueue = [
       [{ build: 'gold_mine', countAs: ['gold_mine', 'gold_mine_lvl2'] }, desired.goldMines],
@@ -128,10 +133,40 @@ export class AIController {
       barracks: playerArmy >= 5 || hardMode ? 2 : 1,
       towers: playerArmy >= 6 ? 3 : 2,
       walls: Math.min(6, 2 + Math.floor(playerArmy / 3)),
-      hasBarracksLvl2: playerBuildings >= 6 || enemyArmy >= 5,
+      hasBarracksLvl2: playerBuildings >= 6 || enemyArmy >= 5 || this.currentStrategy === 'siege',
       hasCannonTowers: playerArmy >= 8 || hardMode,
       hasReinforcedWalls: playerArmy >= 7,
     };
+  }
+
+  _updateStrategy() {
+    // Оцінка бази гравця
+    const pBuildings = [...this.state.playerBuildings.values()].filter(b => !b.isDestroyed);
+    const pArmyCount = this.state.playerUnits.size;
+    const eArmyCount = this.state.enemyUnits.size;
+
+    let towers = 0;
+    let economy = 0;
+
+    for (const b of pBuildings) {
+      if (b.def.category === 'defense') towers++;
+      if (b.def.category === 'economy') economy++;
+    }
+
+    if (towers >= 3 || (towers >= 2 && pArmyCount < 4)) {
+      this.currentStrategy = 'siege';
+    } else if (economy >= 3 && pArmyCount <= eArmyCount + 2) {
+      this.currentStrategy = 'harass';
+    } else if (pArmyCount <= 3 && pBuildings.length <= 4) {
+      this.currentStrategy = 'rush';
+    } else {
+      this.currentStrategy = 'balanced';
+    }
+
+    // Для легкого рівня складності граємо простіше
+    if (this.cfg.ai.difficulty === 'easy' && this.currentStrategy !== 'rush') {
+      this.currentStrategy = 'balanced';
+    }
   }
 
   _canBuild(defId) {
@@ -258,14 +293,24 @@ export class AIController {
   }
 
   _chooseBestUnit(barracksBuilding) {
-    const playerBuildings = this.state.playerBuildings.size;
-    const playerArmy      = this.state.playerUnits.size;
-    const enemyArmy       = this.state.enemyUnits.size;
-    const canSiege        = barracksBuilding.def.id === 'barracks_lvl2';
+    const playerArmy = this.state.playerUnits.size;
+    const enemyArmy  = this.state.enemyUnits.size;
+    const canSiege   = barracksBuilding.def.id === 'barracks_lvl2';
 
-    if (canSiege && playerBuildings >= 6 && this.gold >= this.defs.units.catapult.cost.gold) {
+    // Вплив поточної стратегії на тренування
+    if (this.currentStrategy === 'siege' && canSiege && this.gold >= this.defs.units.catapult.cost.gold) {
       return 'catapult';
     }
+    
+    if (this.currentStrategy === 'harass' && this.gold >= this.defs.units.knight.cost.gold) {
+      return 'knight';
+    }
+
+    if (this.currentStrategy === 'rush') {
+      return 'warrior'; // Дешевий зерг-раш
+    }
+
+    // Збалансований підхід
     if (playerArmy > enemyArmy + 2 && this.gold >= this.defs.units.knight.cost.gold) {
       return 'knight';
     }
@@ -288,18 +333,39 @@ export class AIController {
     const units = [...this.state.enemyUnits.values()].filter((u) => !u.isDead);
     if (units.length === 0) return;
 
-    const hq = [...this.state.playerBuildings.values()].find((b) => b.def.id === 'headquarters');
-    if (!hq) return;
+    // Визначити ціль на основі стратегії
+    let target = null;
+    const pBuildings = [...this.state.playerBuildings.values()].filter(b => !b.isDestroyed);
+    
+    if (this.currentStrategy === 'siege') {
+      target = pBuildings.find(b => b.def.category === 'defense');
+    } else if (this.currentStrategy === 'harass') {
+      target = pBuildings.find(b => b.def.category === 'economy');
+    }
+
+    // Fallback якщо ціль стратегії зникла
+    if (!target) {
+      target = pBuildings.find(b => b.def.id === 'headquarters');
+    }
+
+    if (!target) return;
 
     const attackCount = Math.min(units.length, Math.max(this._attackThreshold(), Math.ceil(units.length * 0.8)));
+    const tagLines = {
+      'siege': 'Облога',
+      'harass': 'Рейд на економіку',
+      'rush': 'Швидка атака',
+      'balanced': 'Атака'
+    };
+
     for (const u of units.slice(0, attackCount)) {
-      u.targetId   = hq.id;
+      u.targetId   = target.id;
       u.targetTeam = 'player';
       u.moveTarget = null;
       u.setPath([]);
     }
 
-    bus.emit('ai:waveStarted', { unitCount: attackCount });
+    bus.emit('ai:waveStarted', { unitCount: attackCount, type: tagLines[this.currentStrategy] });
   }
 
   _attackThreshold() {

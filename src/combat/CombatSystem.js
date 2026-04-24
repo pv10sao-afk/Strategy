@@ -78,6 +78,36 @@ export class CombatSystem {
           break;
       }
     }
+
+    // Алгоритм розштовхування юнітів (Separation / Boids),
+    // щоб вони не злипалися в одну точку під час руху чи бою.
+    this._applySeparation(myUnits, dtSec);
+  }
+
+  _applySeparation(units, dtSec) {
+    const list = [...units.values()].filter(u => !u.isDead && u.state !== 'returning');
+    const sepRadius = this.tileSize * 0.65; // Радіус комфортної зони
+    const pushForce = this.tileSize * 1.5;  // Сила відштовхування
+
+    for (let i = 0; i < list.length; i++) {
+      const u1 = list[i];
+      let fx = 0, fy = 0;
+      for (let j = i + 1; j < list.length; j++) {
+        const u2 = list[j];
+        const dx = u1.x - u2.x;
+        const dy = u1.y - u2.y;
+        const dist = Math.hypot(dx, dy) || 0.1;
+
+        if (dist < sepRadius) {
+          const force = ((sepRadius - dist) / sepRadius) * pushForce;
+          const pushX = (dx / dist) * force * dtSec;
+          const pushY = (dy / dist) * force * dtSec;
+          
+          u1.x += pushX; u1.y += pushY;
+          u2.x -= pushX; u2.y -= pushY;
+        }
+      }
+    }
   }
 
   /** Aggro: якщо ворог в радіусі — встановити ціль і перейти в attacking або moving. */
@@ -421,16 +451,32 @@ export class CombatSystem {
 
   _onAttackOrder({ unitIds }) {
     const teamUnits = this.state.playerUnits;
+    const ids = unitIds && unitIds.length > 0 ? unitIds : [...teamUnits.keys()];
+    
+    // Пряма атака на вказану ціль (тап по ворогу)
+    if (targetId) {
+      for (const id of ids) {
+        const u = teamUnits.get(id);
+        if (!u || u.isDead) continue;
+        
+        u.isOrdered = true;
+        u.targetId = targetId;
+        u.targetTeam = targetTeam;
+        
+        // Знайти ціль і рушити до неї
+        const t = this.state.enemyBuildings.get(targetId) ?? this.state.enemyUnits.get(targetId);
+        if (t) {
+          this._moveTo(u, this._getTargetPos(t));
+        }
+      }
+      return;
+    }
 
-    // Знайти усі ворожі будівлі в агресивному режимі
+    // Регулярна загальна атака
     const enemyTargets = [
       ...this.state.enemyBuildings.values(),
       ...this.state.enemyUnits.values(),
     ].filter(t => !t.isDead && !t.isDestroyed);
-
-    const ids = unitIds && unitIds.length > 0
-      ? unitIds
-      : [...teamUnits.keys()];
 
     for (const id of ids) {
       const u = teamUnits.get(id);

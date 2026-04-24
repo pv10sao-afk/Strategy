@@ -44,6 +44,7 @@ export class Game {
     this._setLoadingText('Завантаження ресурсів...');
 
     try {
+      this.instantBuild = options.instantBuild ?? true;
       // 1. Завантаження
       await this._loadAssets();
       this._applyStartOptions(options);
@@ -183,7 +184,7 @@ export class Game {
     this.ai      = new AIController(this.state, ents, cfg);
 
     // UI (після стану та рендерера)
-    this.ui = new UIManager(ents, this.state, this.renderer);
+    this.ui = new UIManager(ents, this.state, this.renderer, { instantBuild: this.instantBuild });
     globalThis.__uiManager = this.ui;
 
     // ШІ будівля через EventBus

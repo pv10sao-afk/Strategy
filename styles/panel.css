@@ -349,3 +349,24 @@
   .btn-name { font-size: 10.5px; }
   .btn-cost { font-size: 11px; }
 }
+
+/* ── Адаптація під смартфони (Mobile Fixes) ── */
+@media (max-width: 480px) {
+  :root {
+    --panel-height: 120px;
+  }
+  .build-btn, .army-btn {
+    width: 60px;
+    height: 66px;
+    padding: 4px;
+    border-radius: 8px;
+  }
+  .btn-icon { font-size: 18px; margin-bottom: 2px; }
+  .btn-name { font-size: 8.5px; }
+  .btn-cost { font-size: 9px; }
+  
+  .panel-tabs { height: 32px; font-size: 12px; }
+  .btn-action { height: 32px; font-size: 11px; }
+  .btn-attack-big { height: 36px; font-size: 13px; }
+  .panel-peek { height: 84px; }
+}

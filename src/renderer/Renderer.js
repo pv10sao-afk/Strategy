@@ -30,6 +30,7 @@ export class Renderer {
 
     // Камера (зсув у пікселях)
     this.camera = { x: 0, y: 0 };
+    this.zoom   = 1.0;
 
     // Тайлова карта
     /** @type {number[][]|null} */
@@ -71,6 +72,13 @@ export class Renderer {
   setMap(tileGrid, mapZones) {
     this._tileGrid  = tileGrid;
     this._tileTypes = mapZones.tileTypes;
+    
+    // Передобчислити кеш tileId -> key для миттєвого рендерингу (оптимізація FPS)
+    this._tileIdToKey = [];
+    for (const [key, val] of Object.entries(this._tileTypes)) {
+      this._tileIdToKey[val.id] = key;
+    }
+    
     this._renderStaticMap();
   }
 
@@ -96,6 +104,7 @@ export class Renderer {
     ctx.clearRect(0, 0, this.entityCanvas.width, this.entityCanvas.height);
 
     ctx.save();
+    ctx.scale(this.zoom, this.zoom);
     ctx.translate(-this.camera.x, -this.camera.y);
 
     this._renderBuildings(ctx, state.playerBuildings, 'player');
@@ -117,14 +126,21 @@ export class Renderer {
     const grid = this._tileGrid;
     const ts   = this.tileSize;
 
+    // Розміри екрану у світових координатах
+    const viewW = this.mapCanvas.width / this.zoom;
+    const viewH = this.mapCanvas.height / this.zoom;
+
     // Визначати видиму область відносно камери (тільки видимі тайли)
     const startCol = Math.max(0, Math.floor(this.camera.x / ts) - 1);
     const startRow = Math.max(0, Math.floor(this.camera.y / ts) - 1);
-    const endCol   = Math.min(grid[0].length - 1, Math.ceil((this.camera.x + this.mapCanvas.width)  / ts) + 1);
-    const endRow   = Math.min(grid.length    - 1, Math.ceil((this.camera.y + this.mapCanvas.height) / ts) + 1);
+    const endCol   = Math.min(grid[0].length - 1, Math.ceil((this.camera.x + viewW)  / ts) + 1);
+    const endRow   = Math.min(grid.length    - 1, Math.ceil((this.camera.y + viewH) / ts) + 1);
 
     ctx.clearRect(0, 0, this.mapCanvas.width, this.mapCanvas.height);
 
+    ctx.save();
+    ctx.scale(this.zoom, this.zoom);
+    
     // Зсув відносно камери
     const offX = -this.camera.x;
     const offY = -this.camera.y;
@@ -132,9 +148,7 @@ export class Renderer {
     for (let row = startRow; row <= endRow; row++) {
       for (let col = startCol; col <= endCol; col++) {
         const tileId = grid[row]?.[col] ?? 0;
-        const key    = Object.keys(this._tileTypes).find(
-          k => this._tileTypes[k].id === tileId
-        ) ?? 'grass';
+        const key    = this._tileIdToKey[tileId] ?? 'grass';
 
         const x = col * ts + offX;
         const y = row * ts + offY;
@@ -165,6 +179,8 @@ export class Renderer {
         }
       }
     }
+    
+    ctx.restore();
   }
 
   /** Перемалювати статичну карту з поточною камерою. */
@@ -379,22 +395,52 @@ export class Renderer {
     ctx.restore();
   }
 
+  /** Встановити прозорий макет будівлі для підтвердження будівництва. */
+  setBuildPreview(def, tile) {
+    this._ghostDef  = def;
+    this._ghostTile = tile;
+  }
+
   // ─────────────────────────────────────────────
-  //  Камера
+  //  Камера та Зум
   // ─────────────────────────────────────────────
+
+  setZoom(z, screenCenter) {
+    const oldZoom = this.zoom;
+    const newZoom = Math.max(0.4, Math.min(z, 2.5));
+    if (oldZoom === newZoom) return;
+
+    // Зберігаємо світові координати під екраном незмінними (center points)
+    const svX = screenCenter?.x ?? (this.entityCanvas.width / 2);
+    const svY = screenCenter?.y ?? (this.entityCanvas.height / 2);
+    const worldX = (svX / oldZoom) + this.camera.x;
+    const worldY = (svY / oldZoom) + this.camera.y;
+
+    this.zoom = newZoom;
+    this.camera.x = worldX - (svX / newZoom);
+    this.camera.y = worldY - (svY / newZoom);
+
+    // panCamera(0,0) застосовує затискання (clamp) меж карти
+    this.panCamera(0, 0);
+  }
 
   panCamera(dx, dy) {
     const mapW = (this._tileGrid?.[0]?.length ?? 24) * this.tileSize;
     const mapH = (this._tileGrid?.length    ?? 40) * this.tileSize;
-    this.camera.x = Math.max(0, Math.min(this.camera.x + dx, Math.max(0, mapW - this.entityCanvas.width)));
-    this.camera.y = Math.max(0, Math.min(this.camera.y + dy, Math.max(0, mapH - this.entityCanvas.height)));
+    
+    // Viewport size uin world units
+    const viewW = this.entityCanvas.width / this.zoom;
+    const viewH = this.entityCanvas.height / this.zoom;
+
+    this.camera.x = Math.max(0, Math.min(this.camera.x + dx, Math.max(0, mapW - viewW)));
+    this.camera.y = Math.max(0, Math.min(this.camera.y + dy, Math.max(0, mapH - viewH)));
     this._redrawMap();
   }
 
   /** Конвертація піксель екрана → тайл карти. */
   screenToTile(screenX, screenY) {
-    const worldX = screenX + this.camera.x;
-    const worldY = screenY + this.camera.y;
+    const worldX = (screenX / this.zoom) + this.camera.x;
+    const worldY = (screenY / this.zoom) + this.camera.y;
     return {
       x: Math.floor(worldX / this.tileSize),
       y: Math.floor(worldY / this.tileSize),
@@ -404,8 +450,8 @@ export class Renderer {
   /** Конвертація тайлу → піксель центру на екрані. */
   tileToScreen(tileX, tileY) {
     return {
-      x: tileX * this.tileSize - this.camera.x + this.tileSize / 2,
-      y: tileY * this.tileSize - this.camera.y + this.tileSize / 2,
+      x: (tileX * this.tileSize - this.camera.x + this.tileSize / 2) * this.zoom,
+      y: (tileY * this.tileSize - this.camera.y + this.tileSize / 2) * this.zoom,
     };
   }
 }

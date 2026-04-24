@@ -40,6 +40,13 @@
         </button>
       </div>
 
+      <div class="start-settings" style="margin-top: 16px; margin-bottom: 24px;">
+        <label style="display:flex; align-items:center; gap:8px; color:#ccc; font-size:14px; cursor:pointer;">
+          <input type="checkbox" id="chk-instant-build" checked style="width:18px; height:18px;">
+          Миттєве будівництво (1 тап замість 2)
+        </label>
+      </div>
+
       <div class="start-actions">
         <button id="btn-start-game" class="start-play">Почати гру</button>
       </div>
@@ -111,6 +118,7 @@
       </div>
 
       <div class="hud-center">
+        <button id="btn-back-menu" class="btn-action" style="margin-right:12px; padding:6px 10px; font-size:12px; background:rgba(231,76,60,0.15); border:1px solid rgba(231,76,60,0.5); border-radius:6px; color:#fff;" title="Вийти в меню">↩ Вийти</button>
         <div id="hud-phase" class="hud-phase">⚔ Бій</div>
         <div id="hud-fps"   class="hud-fps">60 FPS</div>
       </div>
@@ -189,8 +197,14 @@
     const game = new Game();
     const startMenu = document.getElementById('start-menu');
     const startBtn = document.getElementById('btn-start-game');
+    const chkInstant = document.getElementById('chk-instant-build');
     const difficultyCards = [...document.querySelectorAll('[data-difficulty]')];
     let selectedDifficulty = 'easy';
+
+    // Відновлення налаштування з localStorage
+    if (localStorage.getItem('fw_instant_build') === 'false') {
+      chkInstant.checked = false;
+    }
 
     difficultyCards.forEach((card) => {
       card.addEventListener('click', () => {
@@ -202,14 +216,24 @@
     startBtn?.addEventListener('click', async () => {
       startBtn.disabled = true;
       startBtn.textContent = 'Запуск...';
+      
+      const instantBuild = chkInstant.checked;
+      localStorage.setItem('fw_instant_build', instantBuild);
+
       startMenu?.classList.add('hidden');
       try {
-        await game.start({ difficulty: selectedDifficulty });
+        await game.start({ difficulty: selectedDifficulty, instantBuild });
       } catch (err) {
         console.error(err);
         startMenu?.classList.remove('hidden');
         startBtn.disabled = false;
         startBtn.textContent = 'Почати гру';
+      }
+    });
+
+    document.getElementById('btn-back-menu')?.addEventListener('click', () => {
+      if (confirm('Точно вийти в головне меню? Прогрес поточного бою буде втрачено.')) {
+        location.reload();
       }
     });
 
