@@ -482,9 +482,6 @@ export class UIManager {
     const relY  = screenY - rect.top;
     const tile  = this.renderer.screenToTile(relX, relY);
 
-      return;
-    }
-
     // ── Цільова атака (тап по ворогу лівою/правою коли вибрана армія) ──
     if (this._selectedUnitIds.size > 0 && this._inputMode !== 'build') {
       const isRightClick = button === 2;
