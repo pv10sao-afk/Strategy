@@ -5,9 +5,12 @@
   "main": "index.html",
   "type": "module",
   "scripts": {
-    "dev":     "npx serve . -l 3000",
-    "android": "npx cap sync android && npx cap open android",
-    "build:android": "npx cap sync android && cd android && ./gradlew assembleRelease"
+    "dev":           "npx serve . -l 3000",
+    "build:web":     "node scripts/prepare-web.mjs",
+    "ensure:android":"node scripts/ensure-android.mjs",
+    "sync:android":  "npm run build:web && npm run ensure:android && npx cap sync android",
+    "android":       "npm run sync:android && npx cap open android",
+    "build:android": "npm run sync:android && cd android && gradlew.bat assembleRelease"
   },
   "devDependencies": {
     "@capacitor/cli":  "^6.0.0",

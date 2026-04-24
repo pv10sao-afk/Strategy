@@ -5,6 +5,7 @@ node_modules/
 
 dist/
 build/
+www/
 
 .DS_Store
 Thumbs.db
