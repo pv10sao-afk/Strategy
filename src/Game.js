@@ -393,6 +393,16 @@ export class Game {
     clearZone(cfg.map.zones.player.startRow, cfg.map.zones.player.endRow);
     clearZone(cfg.map.zones.enemy.startRow,  cfg.map.zones.enemy.endRow);
 
+    // ── 7. Очистити міст та підходи до нього (щоб не блокувався скелями) ─
+    for (let r = cfg.map.zones.enemy.endRow - 2; r <= cfg.map.zones.player.startRow + 2; r++) {
+      for (let c = bridgeCol - 2; c <= bridgeCol + 1; c++) {
+        // Очищаємо лише скелі, не чіпаємо воду чи сам міст
+        if (get(r, c) === 2) {
+          set(r, c, 0); // grass
+        }
+      }
+    }
+
     return grid;
   }
 
