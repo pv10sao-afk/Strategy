@@ -81,7 +81,8 @@ export class Pathfinder {
 
   _isWalkable(x, y, canTraverse = null) {
     if (!(x >= 0 && y >= 0 && x < this.cols && y < this.rows)) return false;
-    return this.grid[y][x] === 0 || canTraverse?.(x, y) === true;
+    const tile = this.grid[y][x];
+    return tile === 0 || tile === 4 || canTraverse?.(x, y) === true;
   }
 
   _neighbors(x, y, canTraverse = null) {

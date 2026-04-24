@@ -379,36 +379,34 @@ export class CombatSystem {
 
   _findPathForUnit(team, startTX, startTY, endTX, endTY) {
     const canTraverse = (x, y) => this._canUnitTraverseTile(team, x, y);
-    const directPath = this.pathfinder.findPath(startTX, startTY, endTX, endTY, { canTraverse });
-    if (directPath.length > 0) return directPath;
 
-    const maxRadius = 6;
-    for (let radius = 1; radius <= maxRadius; radius++) {
-      const candidates = [];
-      for (let dy = -radius; dy <= radius; dy++) {
-        for (let dx = -radius; dx <= radius; dx++) {
-          if (Math.max(Math.abs(dx), Math.abs(dy)) !== radius) continue;
-          candidates.push({ x: endTX + dx, y: endTY + dy });
+    let targetTX = endTX;
+    let targetTY = endTY;
+
+    // Якщо цільова точка заблокована, шукаємо найближчу вільну ДО пошуку шляху
+    if (!this.pathfinder._isWalkable(targetTX, targetTY, canTraverse)) {
+      let found = false;
+      const maxRadius = 6;
+      for (let radius = 1; radius <= maxRadius; radius++) {
+        for (let dy = -radius; dy <= radius; dy++) {
+          for (let dx = -radius; dx <= radius; dx++) {
+            if (Math.max(Math.abs(dx), Math.abs(dy)) !== radius) continue;
+            if (this.pathfinder._isWalkable(endTX + dx, endTY + dy, canTraverse)) {
+              targetTX = endTX + dx;
+              targetTY = endTY + dy;
+              found = true;
+              break;
+            }
+          }
+          if (found) break;
         }
+        if (found) break;
       }
-
-      candidates.sort((a, b) =>
-        Math.hypot(a.x - endTX, a.y - endTY) - Math.hypot(b.x - endTX, b.y - endTY)
-      );
-
-      for (const candidate of candidates) {
-        const path = this.pathfinder.findPath(
-          startTX,
-          startTY,
-          candidate.x,
-          candidate.y,
-          { canTraverse }
-        );
-        if (path.length > 0) return path;
-      }
+      if (!found) return []; // Всі 6 клітин навколо заблоковані
     }
 
-    return [];
+    // Робимо лише ОДИН пошук A*
+    return this.pathfinder.findPath(startTX, startTY, targetTX, targetTY, { canTraverse });
   }
 
   _canUnitTraverseTile(team, tileX, tileY) {
