@@ -1,0 +1,351 @@
+/* ═══════════════════════════════════════════════════════
+   panel.css v2 — Нижня панель + Mode Bar + Army Controls
+═══════════════════════════════════════════════════════ */
+
+/* ── Mode Bar (між HUD та Canvas) ─────────────────── */
+.mode-bar {
+  position:        relative;
+  z-index:         90;
+  flex-shrink:     0;
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         0 14px;
+  height:          32px;
+  background:      rgba(13, 17, 23, 0.92);
+  border-bottom:   1px solid var(--c-border);
+  backdrop-filter: blur(8px);
+  transition:      background var(--t-med);
+}
+
+.mode-bar[data-type='build']  { background: rgba(46,  204, 113, 0.15); border-color: rgba(46,204,113,0.3); }
+.mode-bar[data-type='move']   { background: rgba(52,  152, 219, 0.15); border-color: rgba(52,152,219,0.3); }
+.mode-bar[data-type='select'] { background: rgba(241, 196, 15,  0.12); border-color: rgba(241,196,15, 0.3); }
+.mode-bar[data-type='attack'] { background: rgba(231, 76,  60,  0.18); border-color: rgba(231,76, 60, 0.4); }
+.mode-bar[data-type='info']   { background: rgba(52,  152, 219, 0.1);  border-color: rgba(52,152,219,0.2); }
+
+.mode-label {
+  font-size:      12px;
+  font-weight:    600;
+  color:          var(--c-text);
+  letter-spacing: 0.2px;
+  white-space:    nowrap;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
+}
+
+.sel-count {
+  font-size:   12px;
+  font-weight: 700;
+  color:       var(--c-gold);
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+/* ── Bottom Panel ──────────────────────────────────── */
+.bottom-panel {
+  position:        relative;
+  z-index:         100;
+  flex-shrink:     0;
+  height:          var(--panel-height);
+  display:         flex;
+  flex-direction:  column;
+  background:      var(--grad-panel);
+  border-top:      1px solid var(--c-border);
+  box-shadow:      0 -4px 24px rgba(0,0,0,0.5);
+  padding-bottom:  env(safe-area-inset-bottom, 0px);
+  transition:      height var(--t-med) ease;
+  overflow:        hidden;
+}
+
+/* Peek mode — показати тільки кнопки (під час будівництва) */
+.panel-peek {
+  height: 94px;
+}
+
+/* ── Tabs ──────────────────────────────────────────── */
+.panel-tabs {
+  display:       flex;
+  flex-shrink:   0;
+  height:        36px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.panel-tab {
+  flex:          1;
+  height:        100%;
+  font-size:     13px;
+  font-weight:   700;
+  letter-spacing: 0.3px;
+  color:         var(--c-text-muted);
+  background:    transparent;
+  border-bottom: 3px solid transparent;
+  transition:    color var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+}
+
+.tab-active {
+  color:        var(--c-gold);
+  border-color: var(--c-gold);
+  background:   rgba(241, 196, 15, 0.06);
+}
+
+/* ── Panel Scroll ──────────────────────────────────── */
+.panel-scroll {
+  flex:          1;
+  overflow-x:    auto;
+  overflow-y:    hidden;
+  display:       flex;
+  align-items:   center;
+  gap:           6px;
+  padding:       6px 10px;
+  scrollbar-width: none;
+}
+.panel-scroll::-webkit-scrollbar { display: none; }
+
+/* Separator label between categories */
+.panel-sep {
+  flex-shrink:   0;
+  font-size:     16px;
+  opacity:       0.5;
+  padding:       0 4px;
+  align-self:    center;
+}
+
+/* ── Build / Army Buttons ─────────────────────────── */
+.build-btn,
+.army-btn {
+  position:        relative;
+  flex-shrink:     0;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             3px;
+  width:           68px;
+  height:          76px;
+  padding:         6px 4px 4px;
+  border-radius:   var(--r-md);
+  background:      var(--c-surface-2);
+  border:          1.5px solid var(--c-border);
+  overflow:        hidden;
+  transition:
+    transform var(--t-fast),
+    border-color var(--t-fast),
+    box-shadow var(--t-fast),
+    opacity var(--t-fast);
+}
+
+.build-btn:active,
+.army-btn:active   { transform: scale(0.93); }
+
+.build-btn:hover   { border-color: rgba(241,196,15,0.5); box-shadow: 0 0 10px rgba(241,196,15,0.12); }
+.army-btn:hover    { border-color: rgba(231,76, 60, 0.5); box-shadow: 0 0 10px rgba(231,76,60,0.12);  }
+
+/* Selected state (during build mode) */
+.btn-selected      { border-color: var(--c-gold) !important; box-shadow: 0 0 12px rgba(241,196,15,0.35) !important; }
+/* Disabled (can't afford) */
+.btn-disabled      { opacity: 0.38; filter: grayscale(0.4); }
+
+.btn-icon  { font-size: 20px; line-height: 1; }
+.btn-name  {
+  font-size: 9.5px; font-weight: 700; text-align: center;
+  color: var(--c-text); line-height: 1.2;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.btn-cost  { font-size: 10px; font-weight: 700; color: var(--c-gold); }
+
+/* Training progress bar on army button */
+.train-bar {
+  position:      absolute;
+  bottom:        0; left: 0;
+  height:        3px; width: 0%;
+  background:    var(--c-blue);
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  box-shadow:    0 0 6px var(--c-blue);
+  transition:    width 0.3s linear;
+  opacity:       0;
+}
+
+/* ── Panel Actions ────────────────────────────────── */
+.panel-actions {
+  flex-shrink: 0;
+  display:     flex;
+  flex-direction: column;
+  gap:         4px;
+  padding:     4px 10px 6px;
+}
+
+.actions-row {
+  display:   flex;
+  gap:       6px;
+  align-items: center;
+}
+
+.army-actions { flex: 1; }
+
+.btn-action {
+  height:        36px;
+  border-radius: var(--r-md);
+  font-size:     12px;
+  font-weight:   700;
+  letter-spacing: 0.3px;
+  transition:    transform var(--t-fast), box-shadow var(--t-fast), opacity var(--t-fast), background var(--t-fast);
+  white-space:   nowrap;
+}
+.btn-action:active { transform: scale(0.95); }
+
+/* Cancel */
+.btn-cancel {
+  width:      40px;
+  background: var(--c-surface-2);
+  border:     1px solid var(--c-border);
+  color:      var(--c-text-muted);
+  font-size:  16px;
+}
+
+/* Select All */
+.btn-sel {
+  flex:       1;
+  background: var(--c-surface-2);
+  border:     1px solid rgba(241,196,15,0.3);
+  color:      var(--c-gold);
+}
+.btn-sel.btn-primary {
+  background: rgba(241,196,15,0.18);
+  border-color: var(--c-gold);
+  box-shadow: 0 0 8px rgba(241,196,15,0.25);
+}
+
+/* Move */
+.btn-move {
+  flex:       1;
+  background: var(--c-surface-2);
+  border:     1px solid rgba(52,152,219,0.4);
+  color:      var(--c-blue);
+}
+.btn-move.btn-active {
+  background: rgba(52,152,219,0.2);
+  border-color: var(--c-blue);
+  box-shadow: 0 0 10px rgba(52,152,219,0.35);
+}
+.btn-move.btn-dim { opacity: 0.35; }
+
+/* Attack */
+.btn-attack-big {
+  flex:       2;
+  height:     40px;
+  font-size:  14px;
+  background: var(--grad-btn-attack);
+  color:      #fff;
+  box-shadow: var(--shadow-glow-red);
+  animation:  attack-pulse 2.5s ease-in-out infinite;
+}
+.btn-attack-big.btn-dim { opacity: 0.35; animation: none; }
+.btn-attack-big:active  { box-shadow: none; }
+
+@keyframes attack-pulse {
+  0%, 100% { box-shadow: var(--shadow-glow-red); }
+  50%       { box-shadow: 0 0 22px rgba(231,76,60,0.8); }
+}
+
+/* ── Modal ────────────────────────────────────────── */
+.modal-overlay {
+  position:    fixed; inset: 0;
+  z-index:     7777;
+  background:  rgba(0,0,0,0.65);
+  display:     flex;
+  align-items: flex-end;
+  animation:   fadeIn var(--t-fast) ease;
+}
+
+.modal-body {
+  width:        100%;
+  background:   var(--c-surface);
+  border-top:   1px solid var(--c-border);
+  border-radius:var(--r-lg) var(--r-lg) 0 0;
+  padding:      18px 16px 32px;
+  animation:    slideUp var(--t-med) cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.modal-header {
+  display:     flex;
+  gap:         12px;
+  margin-bottom: 12px;
+}
+.modal-icon   { font-size: 30px; flex-shrink: 0; }
+.modal-title  { font-size: 18px; font-weight: 700; }
+.modal-desc   { font-size: 12px; color: var(--c-text-muted); margin-top: 3px; }
+
+.modal-hp {
+  position:    relative;
+  height:      6px;
+  background:  rgba(255,255,255,0.1);
+  border-radius: 99px;
+  margin-bottom: 12px;
+  overflow:    hidden;
+}
+.modal-hp-bar {
+  position:  absolute; left: 0; top: 0; height: 100%;
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+.modal-hp-text {
+  position:  absolute; right: 0; top: -16px;
+  font-size: 11px; color: var(--c-text-muted);
+}
+
+.modal-stats {
+  display:     flex;
+  flex-wrap:   wrap;
+  gap:         6px;
+  margin-bottom: 14px;
+}
+.stat {
+  display:     flex;
+  align-items: center;
+  gap:         5px;
+  padding:     5px 10px;
+  background:  var(--c-surface-2);
+  border-radius: var(--r-sm);
+  font-size:   12px; font-weight: 600;
+}
+.stat-warn { background: rgba(241,196,15,0.12); color: var(--c-gold); }
+
+.modal-actions { display: flex; gap: 8px; }
+
+.btn-modal {
+  height:        42px;
+  border-radius: var(--r-md);
+  font-size:     13px; font-weight: 700;
+  transition:    transform var(--t-fast);
+  padding:       0 14px;
+}
+.btn-modal:active { transform: scale(0.97); }
+
+.btn-upgrade {
+  flex:       1;
+  background: var(--grad-gold);
+  color:      #000;
+  box-shadow: var(--shadow-glow-gold);
+}
+
+.btn-demolish {
+  background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(243,156,18,0.35);
+}
+
+.btn-modal-close {
+  background:  var(--c-surface-2);
+  border:      1px solid var(--c-border);
+  color:       var(--c-text-muted);
+  padding:     0 16px;
+}
+
+/* Responsive: більші кнопки на планшетах */
+@media (min-width: 480px) {
+  .build-btn, .army-btn { width: 80px; height: 84px; }
+  .btn-icon { font-size: 24px; }
+  .btn-name { font-size: 10.5px; }
+  .btn-cost { font-size: 11px; }
+}

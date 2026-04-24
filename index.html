@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="description" content="ForgeWar — мобільна 2D RTS стратегія. Будуй базу, тренуй армію, знищуй ворога.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>ForgeWar – 2D RTS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/hud.css">
+  <link rel="stylesheet" href="styles/panel.css">
+</head>
+<body>
+
+  <!-- ══ START MENU ════════════════════════════════ -->
+  <div id="start-menu" class="start-menu">
+    <div class="start-shell">
+      <div class="start-badge">2D RTS · Vanilla JS</div>
+      <h1 class="start-title">ForgeWar</h1>
+      <p class="start-sub">
+        Будуй базу, тренуй армію, ламай оборону ворога і керуй боєм у реальному часі.
+      </p>
+
+      <div class="start-grid">
+        <button class="difficulty-card difficulty-active" data-difficulty="easy">
+          <span class="difficulty-name">Легка</span>
+          <span class="difficulty-desc">Повільніший бот, м’який старт</span>
+        </button>
+        <button class="difficulty-card" data-difficulty="medium">
+          <span class="difficulty-name">Середня</span>
+          <span class="difficulty-desc">Збалансований темп і хвилі атак</span>
+        </button>
+        <button class="difficulty-card" data-difficulty="hard">
+          <span class="difficulty-name">Важка</span>
+          <span class="difficulty-desc">Агресивний бот і швидкий розвиток</span>
+        </button>
+      </div>
+
+      <div class="start-actions">
+        <button id="btn-start-game" class="start-play">Почати гру</button>
+      </div>
+
+      <div class="start-controls">
+        <div class="control-card">
+          <span class="control-icon">👆</span>
+          <span class="control-title">Тап по юніту</span>
+          <span class="control-desc">Виділити одного або кількох бійців</span>
+        </div>
+        <div class="control-card">
+          <span class="control-icon">🚶</span>
+          <span class="control-title">Рухати → тап на карту</span>
+          <span class="control-desc">Після кнопки руху вибери точку призначення</span>
+        </div>
+        <div class="control-card">
+          <span class="control-icon">⚔</span>
+          <span class="control-title">Атака</span>
+          <span class="control-desc">Відправляє вибраних юнітів у штурм</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ LOADING ══════════════════════════════════ -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="loading-content">
+      <div class="loading-logo">⚔ ForgeWar</div>
+      <div class="loading-sub">Завантаження...</div>
+      <div class="load-bar"><div id="load-bar-fill" class="load-bar-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- ══ END SCREEN ═══════════════════════════════ -->
+  <div id="end-screen" class="end-screen hidden">
+    <div class="end-content">
+      <div id="end-title" class="end-title"></div>
+      <div id="end-sub"   class="end-sub"></div>
+      <button class="btn-restart" onclick="location.reload()">🔄 Грати знову</button>
+    </div>
+  </div>
+
+  <!-- ══ MODAL ════════════════════════════════════ -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div id="modal-body" class="modal-body"></div>
+  </div>
+
+  <!-- ══ TOAST AREA ═══════════════════════════════ -->
+  <div id="notify-area" class="notify-area" aria-live="polite"></div>
+
+  <!-- ══ GAME ROOT ═════════════════════════════════ -->
+  <div id="game-root" class="game-root">
+
+    <!-- HUD (верхня панель) -->
+    <header id="hud" class="hud">
+      <div class="hud-block hud-gold">
+        <div class="hud-icon">🪙</div>
+        <div class="hud-info">
+          <div class="hud-label">ЗОЛОТО</div>
+          <div class="hud-values">
+            <span id="hud-gold-val" class="hud-primary">0</span>
+            <span class="hud-sep">/</span>
+            <span id="hud-gold-cap" class="hud-secondary">300</span>
+          </div>
+          <div class="hud-bar-track">
+            <div id="hud-gold-bar" class="hud-bar-fill hud-bar-gold"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-center">
+        <div id="hud-phase" class="hud-phase">⚔ Бій</div>
+        <div id="hud-fps"   class="hud-fps">60 FPS</div>
+      </div>
+
+      <div class="hud-block hud-army">
+        <div class="hud-icon">⚔</div>
+        <div class="hud-info">
+          <div class="hud-label">АРМІЯ</div>
+          <div class="hud-values">
+            <span id="hud-army-val" class="hud-primary">0</span>
+            <span class="hud-sep">/</span>
+            <span id="hud-army-cap" class="hud-secondary">20</span>
+          </div>
+          <div class="hud-bar-track">
+            <div id="hud-army-bar" class="hud-bar-fill hud-bar-army"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Mode Bar (підказка поточного режиму) -->
+    <div id="mode-bar" class="mode-bar hidden">
+      <span id="mode-label" class="mode-label"></span>
+      <span id="sel-count"  class="sel-count"></span>
+    </div>
+
+    <!-- Canvas Area -->
+    <main id="canvas-wrap" class="canvas-wrap">
+      <canvas id="map-canvas"    class="game-canvas layer-map"></canvas>
+      <canvas id="entity-canvas" class="game-canvas layer-entity" aria-label="Ігрова карта"></canvas>
+    </main>
+
+    <!-- Bottom Panel -->
+    <footer id="bottom-panel" class="bottom-panel">
+
+      <!-- Вкладки -->
+      <div class="panel-tabs">
+        <button id="tab-build" class="panel-tab tab-active" role="tab">🏗 Будувати</button>
+        <button id="tab-army"  class="panel-tab"            role="tab">⚔ Армія</button>
+      </div>
+
+      <!-- Build grid -->
+      <div id="build-grid" class="panel-scroll" role="tabpanel"></div>
+
+      <!-- Army grid (тренування) -->
+      <div id="army-grid" class="panel-scroll hidden" role="tabpanel"></div>
+
+      <!-- Кнопки дій -->
+      <div class="panel-actions">
+
+        <!-- Build tab actions -->
+        <div id="building-actions" class="actions-row">
+          <button id="btn-cancel" class="btn-action btn-cancel">✕</button>
+        </div>
+
+        <!-- Army tab actions (завжди видимі) -->
+        <div class="actions-row army-actions">
+          <button id="btn-sel-all" class="btn-action btn-sel" title="Виділити всіх юнітів">
+            ☑ Всі
+          </button>
+          <button id="btn-move" class="btn-action btn-move" title="Наказ рухатись">
+            🚶 Рухати
+          </button>
+          <button id="btn-attack" class="btn-action btn-attack-big" title="Наказ атакувати">
+            ⚔ Атака!
+          </button>
+        </div>
+
+      </div>
+
+    </footer>
+  </div><!-- /game-root -->
+
+  <script type="module">
+    import { Game } from './src/Game.js';
+    const game = new Game();
+    const startMenu = document.getElementById('start-menu');
+    const startBtn = document.getElementById('btn-start-game');
+    const difficultyCards = [...document.querySelectorAll('[data-difficulty]')];
+    let selectedDifficulty = 'easy';
+
+    difficultyCards.forEach((card) => {
+      card.addEventListener('click', () => {
+        selectedDifficulty = card.dataset.difficulty ?? 'easy';
+        difficultyCards.forEach((item) => item.classList.toggle('difficulty-active', item === card));
+      });
+    });
+
+    startBtn?.addEventListener('click', async () => {
+      startBtn.disabled = true;
+      startBtn.textContent = 'Запуск...';
+      startMenu?.classList.add('hidden');
+      try {
+        await game.start({ difficulty: selectedDifficulty });
+      } catch (err) {
+        console.error(err);
+        startMenu?.classList.remove('hidden');
+        startBtn.disabled = false;
+        startBtn.textContent = 'Почати гру';
+      }
+    });
+
+    globalThis.__game = game;
+  </script>
+</body>
+</html>

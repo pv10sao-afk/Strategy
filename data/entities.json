@@ -1,0 +1,312 @@
+{
+  "version": "1.0.0",
+  "buildings": {
+    "wall": {
+      "id": "wall",
+      "name": "Стіна",
+      "type": "building",
+      "category": "defense",
+      "sprite": "assets/sprites/buildings/wall.png",
+      "size": { "w": 1, "h": 1 },
+      "cost": { "gold": 40 },
+      "buildTime": 3,
+      "maxHp": 800,
+      "upgrades": ["reinforced_wall"],
+      "unlockRequires": null,
+      "description": "Вогнює ворожі напади. Багато СТ一 на малій площі."
+    },
+
+    "reinforced_wall": {
+      "id": "reinforced_wall",
+      "name": "Залізобетонна Стіна",
+      "type": "building",
+      "category": "defense",
+      "sprite": "assets/sprites/buildings/reinforced_wall.png",
+      "size": { "w": 1, "h": 1 },
+      "cost": { "gold": 80 },
+      "buildTime": 5,
+      "maxHp": 2000,
+      "upgrades": [],
+      "unlockRequires": "wall",
+      "description": "Потужна залізобетонна стіна з 2000 СТ一."
+    },
+
+    "gold_mine": {
+      "id": "gold_mine",
+      "name": "Золота Шахта",
+      "type": "building",
+      "category": "economy",
+      "sprite": "assets/sprites/buildings/gold_mine.png",
+      "size": { "w": 2, "h": 2 },
+      "cost": { "gold": 150 },
+      "buildTime": 8,
+      "maxHp": 400,
+      "production": {
+        "resource": "gold",
+        "amount": 12,
+        "intervalSec": 5
+      },
+      "upgrades": ["gold_mine_lvl2"],
+      "unlockRequires": null,
+      "description": "Видобуває золото кожні 5 секунд."
+    },
+
+    "gold_mine_lvl2": {
+      "id": "gold_mine_lvl2",
+      "name": "Золота Шахта II",
+      "type": "building",
+      "category": "economy",
+      "sprite": "assets/sprites/buildings/gold_mine_lvl2.png",
+      "size": { "w": 2, "h": 2 },
+      "cost": { "gold": 300 },
+      "buildTime": 12,
+      "maxHp": 600,
+      "production": {
+        "resource": "gold",
+        "amount": 28,
+        "intervalSec": 5
+      },
+      "upgrades": [],
+      "unlockRequires": "gold_mine",
+      "description": "Покращена шахта з удвічі більшим видобутком."
+    },
+
+    "treasury": {
+      "id": "treasury",
+      "name": "Скарбниця",
+      "type": "building",
+      "category": "economy",
+      "sprite": "assets/sprites/buildings/treasury.png",
+      "size": { "w": 2, "h": 2 },
+      "cost": { "gold": 200 },
+      "buildTime": 10,
+      "maxHp": 350,
+      "storage": {
+        "resource": "gold",
+        "capacity": 500
+      },
+      "upgrades": ["treasury_lvl2"],
+      "unlockRequires": null,
+      "description": "Збільшує ліміт зберігання золота на 500."
+    },
+
+    "treasury_lvl2": {
+      "id": "treasury_lvl2",
+      "name": "Скарбниця II",
+      "type": "building",
+      "category": "economy",
+      "sprite": "assets/sprites/buildings/treasury_lvl2.png",
+      "size": { "w": 2, "h": 2 },
+      "cost": { "gold": 400 },
+      "buildTime": 15,
+      "maxHp": 550,
+      "storage": {
+        "resource": "gold",
+        "capacity": 1200
+      },
+      "upgrades": [],
+      "unlockRequires": "treasury",
+      "description": "Велика скарбниця з ємністю 1200 золота."
+    },
+
+    "barracks": {
+      "id": "barracks",
+      "name": "Казарма",
+      "type": "building",
+      "category": "military",
+      "sprite": "assets/sprites/buildings/barracks.png",
+      "size": { "w": 2, "h": 3 },
+      "cost": { "gold": 250 },
+      "buildTime": 15,
+      "maxHp": 500,
+      "training": {
+        "unitSlots": ["warrior", "archer", "knight"]
+      },
+      "upgrades": ["barracks_lvl2"],
+      "unlockRequires": null,
+      "description": "Тренує базових бойових юнітів."
+    },
+
+    "barracks_lvl2": {
+      "id": "barracks_lvl2",
+      "name": "Казарма II",
+      "type": "building",
+      "category": "military",
+      "sprite": "assets/sprites/buildings/barracks_lvl2.png",
+      "size": { "w": 2, "h": 3 },
+      "cost": { "gold": 500 },
+      "buildTime": 20,
+      "maxHp": 750,
+      "training": {
+        "unitSlots": ["warrior", "archer", "knight", "catapult"]
+      },
+      "upgrades": [],
+      "unlockRequires": "barracks",
+      "description": "Відкриває облогову техніку."
+    },
+
+    "tower": {
+      "id": "tower",
+      "name": "Сторожова Вежа",
+      "type": "building",
+      "category": "defense",
+      "sprite": "assets/sprites/buildings/tower.png",
+      "size": { "w": 1, "h": 2 },
+      "cost": { "gold": 180 },
+      "buildTime": 10,
+      "maxHp": 600,
+      "combat": {
+        "attackDamage": 25,
+        "attackRangeTiles": 5,
+        "attackSpeedMs": 1500,
+        "projectile": "arrow",
+        "targets": ["unit", "building"]
+      },
+      "upgrades": ["cannon_tower"],
+      "unlockRequires": null,
+      "description": "Автоматично атакує ворожі юніти в радіусі 5 клітин."
+    },
+
+    "cannon_tower": {
+      "id": "cannon_tower",
+      "name": "Гарматна Вежа",
+      "type": "building",
+      "category": "defense",
+      "sprite": "assets/sprites/buildings/cannon_tower.png",
+      "size": { "w": 1, "h": 2 },
+      "cost": { "gold": 400 },
+      "buildTime": 18,
+      "maxHp": 800,
+      "combat": {
+        "attackDamage": 80,
+        "attackRangeTiles": 4,
+        "attackSpeedMs": 3000,
+        "projectile": "cannonball",
+        "splashRadius": 1,
+        "targets": ["unit", "building"]
+      },
+      "upgrades": [],
+      "unlockRequires": "tower",
+      "description": "Потужна гармата зі сплеш-пошкодженням."
+    },
+
+    "headquarters": {
+      "id": "headquarters",
+      "name": "Штаб",
+      "type": "building",
+      "category": "core",
+      "sprite": "assets/sprites/buildings/headquarters.png",
+      "size": { "w": 3, "h": 3 },
+      "cost": { "gold": 0 },
+      "buildTime": 0,
+      "maxHp": 2000,
+      "storage": {
+        "resource": "gold",
+        "capacity": 300
+      },
+      "production": {
+        "resource": "gold",
+        "amount": 5,
+        "intervalSec": 10
+      },
+      "upgrades": [],
+      "unlockRequires": null,
+      "isStartBuilding": true,
+      "description": "Головна будівля бази. Якщо знищена — гравець програє."
+    }
+  },
+
+  "units": {
+    "warrior": {
+      "id": "warrior",
+      "name": "Воїн",
+      "type": "unit",
+      "category": "melee",
+      "sprite": "assets/sprites/units/warrior.png",
+      "cost": { "gold": 80 },
+      "trainTimeSec": 10,
+      "maxHp": 200,
+      "speed": 1.5,
+      "combat": {
+        "attackDamage": 30,
+        "attackRangeTiles": 1,
+        "attackSpeedMs": 1000,
+        "damageType": "physical",
+        "targets": ["unit", "building"]
+      },
+      "unlockRequires": "barracks",
+      "description": "Надійний піхотинець з ближнім боєм."
+    },
+
+    "archer": {
+      "id": "archer",
+      "name": "Лучник",
+      "type": "unit",
+      "category": "ranged",
+      "sprite": "assets/sprites/units/archer.png",
+      "cost": { "gold": 120 },
+      "trainTimeSec": 12,
+      "maxHp": 120,
+      "speed": 1.2,
+      "combat": {
+        "attackDamage": 20,
+        "attackRangeTiles": 4,
+        "attackSpeedMs": 1200,
+        "projectile": "arrow",
+        "damageType": "physical",
+        "targets": ["unit", "building"]
+      },
+      "unlockRequires": "barracks",
+      "description": "Дальнобійний юніт, слабкий у рукопашній."
+    },
+
+    "knight": {
+      "id": "knight",
+      "name": "Лицар",
+      "type": "unit",
+      "category": "melee",
+      "sprite": "assets/sprites/units/knight.png",
+      "cost": { "gold": 220 },
+      "trainTimeSec": 20,
+      "maxHp": 500,
+      "speed": 1.0,
+      "combat": {
+        "attackDamage": 60,
+        "attackRangeTiles": 1,
+        "attackSpeedMs": 1500,
+        "damageType": "physical",
+        "targets": ["unit", "building"]
+      },
+      "armor": {
+        "physicalResist": 0.25,
+        "magicResist": 0.0
+      },
+      "unlockRequires": "barracks",
+      "description": "Важкоброньований воїн, повільний але дуже міцний."
+    },
+
+    "catapult": {
+      "id": "catapult",
+      "name": "Катапульта",
+      "type": "unit",
+      "category": "siege",
+      "sprite": "assets/sprites/units/catapult.png",
+      "cost": { "gold": 400 },
+      "trainTimeSec": 30,
+      "maxHp": 250,
+      "speed": 0.6,
+      "combat": {
+        "attackDamage": 150,
+        "attackRangeTiles": 6,
+        "attackSpeedMs": 4000,
+        "projectile": "boulder",
+        "splashRadius": 1.5,
+        "damageType": "siege",
+        "targets": ["building"],
+        "bonusVsBuildings": 2.0
+      },
+      "unlockRequires": "barracks_lvl2",
+      "description": "Облогова техніка. Ідеальна проти споруд, беззахисна у ближньому бою."
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "game": {
+    "title": "ForgeWar",
+    "targetFps": 60,
+    "tickRateMs": 100,
+    "autosaveIntervalSec": 30
+  },
+  "map": {
+    "tileSize": 32,
+    "defaultMapWidth": 24,
+    "defaultMapHeight": 40,
+    "zones": {
+      "player": { "startRow": 24, "endRow": 40 },
+      "neutral": { "startRow": 14, "endRow": 23 },
+      "enemy":  { "startRow": 0,  "endRow": 13 }
+    }
+  },
+  "economy": {
+    "startingGold": 300,
+    "baseStorageCap": 300,
+    "maxArmySize": 20
+  },
+  "combat": {
+    "projectileSpeedPxSec": 200,
+    "unitAggroRangeTiles": 6
+  },
+  "ai": {
+    "difficulty": "medium",
+    "decisionIntervalSec": 5
+  },
+  "ui": {
+    "panelHeightPx": 180,
+    "hudHeightPx": 60,
+    "mapPanSpeed": 8
+  }
+}

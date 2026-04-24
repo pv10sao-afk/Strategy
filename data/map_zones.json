@@ -1,0 +1,14 @@
+{
+  "tileTypes": {
+    "grass":  { "id": 0, "passable": true,  "sprite": "tile_grass.png",  "buildable": true  },
+    "water":  { "id": 1, "passable": false, "sprite": "tile_water.png",  "buildable": false },
+    "rock":   { "id": 2, "passable": false, "sprite": "tile_rock.png",   "buildable": false },
+    "sand":   { "id": 3, "passable": true,  "sprite": "tile_sand.png",   "buildable": true  },
+    "bridge": { "id": 4, "passable": true,  "sprite": "tile_bridge.png", "buildable": false }
+  },
+  "zones": [
+    { "id": "player_base", "team": "player", "color": "#2a6496", "rows": [24, 40] },
+    { "id": "neutral",     "team": null,     "color": "#5a5a5a", "rows": [14, 23] },
+    { "id": "enemy_base",  "team": "enemy",  "color": "#8b0000", "rows": [0,  13] }
+  ]
+}

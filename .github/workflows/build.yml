@@ -1,0 +1,127 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:  # Ручний запуск через GitHub UI
+
+jobs:
+  build-apk:
+    name: Build & Sign APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ──────────────────────────────────────────
+      #  1. Checkout
+      # ──────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ──────────────────────────────────────────
+      #  2. Java 17 (required for Gradle 8+)
+      # ──────────────────────────────────────────
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # ──────────────────────────────────────────
+      #  3. Node.js
+      # ──────────────────────────────────────────
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ──────────────────────────────────────────
+      #  4. Встановити залежності
+      # ──────────────────────────────────────────
+      - name: Install npm dependencies
+        run: npm ci
+
+      # ──────────────────────────────────────────
+      #  5. Capacitor sync (генерує android/app/src/...)
+      # ──────────────────────────────────────────
+      - name: Capacitor sync
+        run: npx cap sync android
+
+      # ──────────────────────────────────────────
+      #  6. Дозволи на Gradle wrapper
+      # ──────────────────────────────────────────
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+        working-directory: ${{ github.workspace }}
+
+      # ──────────────────────────────────────────
+      #  7. Кеш Gradle
+      # ──────────────────────────────────────────
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # ──────────────────────────────────────────
+      #  8. Build DEBUG APK (завжди)
+      # ──────────────────────────────────────────
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        working-directory: android
+
+      # ──────────────────────────────────────────
+      #  9. Build RELEASE APK (тільки на main/master)
+      #     Підпис через GitHub Secrets
+      # ──────────────────────────────────────────
+      - name: Build Release APK
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        working-directory: android
+        env:
+          KEYSTORE_FILE:      ${{ secrets.KEYSTORE_FILE }}
+          KEYSTORE_PASSWORD:  ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS:          ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD:       ${{ secrets.KEY_PASSWORD }}
+
+      # ──────────────────────────────────────────
+      #  10. Завантажити Debug APK як артефакт
+      # ──────────────────────────────────────────
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ForgeWar-debug-${{ github.run_number }}
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 14
+
+      # ──────────────────────────────────────────
+      #  11. Завантажити Release APK як артефакт
+      # ──────────────────────────────────────────
+      - name: Upload Release APK
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ForgeWar-release-${{ github.run_number }}
+          path: android/app/build/outputs/apk/release/*.apk
+          retention-days: 30
+
+      # ──────────────────────────────────────────
+      #  12. Опціонально — створити GitHub Release
+      #      (тільки якщо є тег v*.*.*)
+      # ──────────────────────────────────────────
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: android/app/build/outputs/apk/release/*.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
