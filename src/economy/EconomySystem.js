@@ -68,10 +68,14 @@ export class EconomySystem {
       // Тренування юнітів
       const readyUnitId = building.tickTraining(dtSec);
       if (readyUnitId) {
+        // Спавн одразу під казармою, але не виходимо за межі карти
+        const mapMaxRow = (this.state.playerZone?.endRow ?? 40) - 1;
+        const spawnX = building.tileX + Math.floor(building.def.size.w / 2);
+        const spawnY = Math.min(mapMaxRow, building.tileY + building.def.size.h);
         bus.emit('cmd:spawnUnit', {
           unitDefId: readyUnitId,
-          tileX:    building.tileX + Math.floor(building.def.size.w / 2),
-          tileY:    building.tileY + building.def.size.h,
+          tileX:    spawnX,
+          tileY:    spawnY,
           team:     'player',
         });
       }

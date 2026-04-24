@@ -353,20 +353,54 @@
 /* ── Адаптація під смартфони (Mobile Fixes) ── */
 @media (max-width: 480px) {
   :root {
-    --panel-height: 120px;
+    --panel-height: 220px; /* збільшено з 120px → нормально вміщує кнопки + дії */
   }
-  .build-btn, .army-btn {
-    width: 60px;
-    height: 66px;
-    padding: 4px;
-    border-radius: 8px;
+
+  /* Більші, зручніші кнопки */
+  .build-btn,
+  .army-btn {
+    width: 74px;
+    height: 80px;
+    padding: 7px 4px 5px;
+    border-radius: 10px;
+    gap: 4px;
   }
-  .btn-icon { font-size: 18px; margin-bottom: 2px; }
-  .btn-name { font-size: 8.5px; }
-  .btn-cost { font-size: 9px; }
-  
-  .panel-tabs { height: 32px; font-size: 12px; }
-  .btn-action { height: 32px; font-size: 11px; }
-  .btn-attack-big { height: 36px; font-size: 13px; }
-  .panel-peek { height: 84px; }
+  .btn-icon { font-size: 22px; line-height: 1; }
+  .btn-name { font-size: 9.5px; font-weight: 700; }
+  .btn-cost { font-size: 10px; font-weight: 800; }
+
+  /* Вкладки */
+  .panel-tabs  { height: 34px; }
+  .panel-tab   { font-size: 13px; }
+
+  /* Всі кнопки дій — в ОДНОМУ рядку, щоб не їсти висоту */
+  .panel-actions {
+    flex-direction: row;
+    align-items: stretch;
+    padding: 5px 10px 10px;
+    gap: 7px;
+  }
+
+  /* Ряд "скасувати" стає просто flex-контейнером для ✕ */
+  #building-actions {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  /* Ряд армії займає весь залишок ширини */
+  .army-actions {
+    flex: 1;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 7px;
+  }
+
+  /* Дії: однакова висота */
+  .btn-action       { height: 42px; font-size: 12px; }
+  .btn-cancel       { width: 42px; font-size: 17px; }
+  .btn-attack-big   { height: 42px; font-size: 13px; flex: 2; }
+
+  /* Peek під час будівництва */
+  .panel-peek { height: 92px; }
 }

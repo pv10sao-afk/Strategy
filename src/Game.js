@@ -462,10 +462,13 @@ export class Game {
 
   _onResize() {
     const hudH   = this.config?.ui?.hudHeightPx   ?? 60;
-    const panelH = this.config?.ui?.panelHeightPx ?? 180;
+    // Read actual panel height from CSS variable to accommodate mobile changes
+    const cssPanelH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-height')) || 0;
+    const panelH = cssPanelH > 0 ? cssPanelH : (this.config?.ui?.panelHeightPx ?? 180);
+    const modeBarH = document.getElementById('mode-bar')?.offsetHeight ?? 32;
     const w = window.innerWidth;
-    const h = window.innerHeight - hudH - panelH;
-    this.renderer?.resize(w, h);
+    const h = window.innerHeight - hudH - panelH - modeBarH;
+    this.renderer?.resize(w, Math.max(100, h));
   }
 
   // ─────────────────────────────────────────────
