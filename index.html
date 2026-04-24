@@ -200,23 +200,36 @@
     const chkInstant = document.getElementById('chk-instant-build');
     const difficultyCards = [...document.querySelectorAll('[data-difficulty]')];
     let selectedDifficulty = 'easy';
+    let isLaunching = false;
 
     // Відновлення налаштування з localStorage
     if (localStorage.getItem('fw_instant_build') === 'false') {
       chkInstant.checked = false;
     }
 
+    // ── Вибір складності ────────────────────────────────
+    function selectDifficulty(card) {
+      selectedDifficulty = card.dataset.difficulty ?? 'easy';
+      difficultyCards.forEach((item) => {
+        item.classList.toggle('difficulty-active', item === card);
+      });
+    }
+
     difficultyCards.forEach((card) => {
-      card.addEventListener('click', () => {
-        selectedDifficulty = card.dataset.difficulty ?? 'easy';
-        difficultyCards.forEach((item) => item.classList.toggle('difficulty-active', item === card));
+      // click спрацьовує і для миші і для тачу — надійніше за touchend
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        selectDifficulty(card);
       });
     });
 
+    // ── Кнопка старту ───────────────────────────────────
     startBtn?.addEventListener('click', async () => {
+      if (isLaunching) return;          // запобігаємо подвійному кліку
+      isLaunching = true;
       startBtn.disabled = true;
       startBtn.textContent = 'Запуск...';
-      
+
       const instantBuild = chkInstant.checked;
       localStorage.setItem('fw_instant_build', instantBuild);
 
@@ -224,10 +237,13 @@
       try {
         await game.start({ difficulty: selectedDifficulty, instantBuild });
       } catch (err) {
-        console.error(err);
+        console.error('[StartMenu] game.start failed:', err);
         startMenu?.classList.remove('hidden');
         startBtn.disabled = false;
         startBtn.textContent = 'Почати гру';
+        isLaunching = false;
+        // скидаємо внутрішній прапор Game, щоб можна було спробувати знову
+        game._started = false;
       }
     });
 
