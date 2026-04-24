@@ -130,12 +130,12 @@ export class AIController {
     return {
       goldMines: Math.min(5, playerBuildings >= 6 ? 4 : 3),
       treasuries: playerBuildings >= 7 || hardMode ? 2 : 1,
-      barracks: playerArmy >= 5 || hardMode ? 2 : 1,
-      towers: playerArmy >= 6 ? 3 : 2,
-      walls: Math.min(6, 2 + Math.floor(playerArmy / 3)),
+      barracks: this.currentStrategy === 'defensive' ? 2 : (playerArmy >= 5 || hardMode ? 2 : 1),
+      towers: this.currentStrategy === 'defensive' ? 4 : (playerArmy >= 6 ? 3 : 2),
+      walls: this.currentStrategy === 'defensive' ? 8 : Math.min(6, 2 + Math.floor(playerArmy / 3)),
       hasBarracksLvl2: playerBuildings >= 6 || enemyArmy >= 5 || this.currentStrategy === 'siege',
-      hasCannonTowers: playerArmy >= 8 || hardMode,
-      hasReinforcedWalls: playerArmy >= 7,
+      hasCannonTowers: playerArmy >= 8 || hardMode || this.currentStrategy === 'defensive',
+      hasReinforcedWalls: playerArmy >= 7 || this.currentStrategy === 'defensive',
     };
   }
 
@@ -146,17 +146,33 @@ export class AIController {
     const eArmyCount = this.state.enemyUnits.size;
 
     let towers = 0;
+    let walls = 0;
     let economy = 0;
+    let military = 0;
 
     for (const b of pBuildings) {
-      if (b.def.category === 'defense') towers++;
-      if (b.def.category === 'economy') economy++;
+      if (b.def.category === 'defense') {
+        if (b.def.id.includes('wall')) walls++;
+        else towers++;
+      }
+      if (b.def.category === 'economy' && b.def.id !== 'headquarters') economy++;
+      if (b.def.category === 'military') military++;
     }
 
-    if (towers >= 3 || (towers >= 2 && pArmyCount < 4)) {
+    let pRanged = 0;
+    let pMelee = 0;
+    for (const [, u] of this.state.playerUnits) {
+      if (u.def.category === 'ranged') pRanged++;
+      else pMelee++;
+    }
+    this.playerStats = { towers, walls, economy, military, pRanged, pMelee };
+
+    if (towers >= 2 || walls >= 3) {
       this.currentStrategy = 'siege';
-    } else if (economy >= 3 && pArmyCount <= eArmyCount + 2) {
+    } else if (economy >= 3 && military < 2) {
       this.currentStrategy = 'harass';
+    } else if (military >= 2 && pArmyCount > eArmyCount) {
+      this.currentStrategy = 'defensive';
     } else if (pArmyCount <= 3 && pBuildings.length <= 4) {
       this.currentStrategy = 'rush';
     } else {
@@ -296,10 +312,19 @@ export class AIController {
     const playerArmy = this.state.playerUnits.size;
     const enemyArmy  = this.state.enemyUnits.size;
     const canSiege   = barracksBuilding.def.id === 'barracks_lvl2';
+    const stats      = this.playerStats || { pRanged: 0, pMelee: 0 };
+
+    // Контр-юніти на основі армії гравця
+    if (stats.pRanged > stats.pMelee && this.gold >= this.defs.units.knight.cost.gold) {
+      if (Math.random() < 0.6) return 'knight'; // Танкуємо лучників
+    }
+    if (stats.pMelee > stats.pRanged + 2) {
+      if (Math.random() < 0.6) return 'archer'; // Кайтимо мілішників
+    }
 
     // Вплив поточної стратегії на тренування
     if (this.currentStrategy === 'siege' && canSiege && this.gold >= this.defs.units.catapult.cost.gold) {
-      return 'catapult';
+      if (Math.random() < 0.7) return 'catapult';
     }
     
     if (this.currentStrategy === 'harass' && this.gold >= this.defs.units.knight.cost.gold) {
@@ -308,6 +333,10 @@ export class AIController {
 
     if (this.currentStrategy === 'rush') {
       return 'warrior'; // Дешевий зерг-раш
+    }
+    
+    if (this.currentStrategy === 'defensive') {
+      return Math.random() < 0.7 ? 'archer' : 'knight'; // Захищаємось за стінами
     }
 
     // Збалансований підхід
