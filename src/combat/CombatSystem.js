@@ -119,7 +119,7 @@ export class CombatSystem {
     unit.targetId   = target.id;
     unit.targetTeam = target.team;
 
-    if (unit.isInRange(targetPos, this.tileSize)) {
+    if (unit.isInRange(target, this.tileSize)) {
       unit.state = 'attacking';
     } else {
       this._moveTo(unit, targetPos);
@@ -145,7 +145,7 @@ export class CombatSystem {
       return;
     }
 
-    if (target && unit.isInRange(targetPos, this.tileSize)) {
+    if (target && unit.isInRange(target, this.tileSize)) {
       unit.moveTarget = null;
       unit.state = 'attacking';
       return;
@@ -172,7 +172,7 @@ export class CombatSystem {
 
     const targetPos = this._getTargetPos(target);
 
-    if (!unit.isInRange(targetPos, this.tileSize)) {
+    if (!unit.isInRange(target, this.tileSize)) {
       this._moveTo(unit, targetPos);
       return;
     }
@@ -336,7 +336,7 @@ export class CombatSystem {
         const bx = (b.tileX + b.def.size.w / 2) * this.tileSize;
         const by = (b.tileY + b.def.size.h / 2) * this.tileSize;
         const d  = Math.hypot(bx - unit.x, by - unit.y);
-        if (d < bestDist || !best) { best = b; bestDist = d; }
+        if (d < bestDist) { best = b; bestDist = d; }
       }
     }
     return best;
@@ -443,7 +443,7 @@ export class CombatSystem {
     this.state.addUnit(u, team);
   }
 
-  _onAttackOrder({ unitIds }) {
+  _onAttackOrder({ unitIds, targetId, targetTeam }) {
     const teamUnits = this.state.playerUnits;
     const ids = unitIds && unitIds.length > 0 ? unitIds : [...teamUnits.keys()];
     

@@ -157,12 +157,25 @@ export class Unit {
 
   /**
    * Перевірити чи ціль в радіусі атаки.
-   * @param {{x:number, y:number}} targetPos
+   * @param {Object} target
    * @param {number} tileSize
    */
-  isInRange(targetPos, tileSize) {
+  isInRange(target, tileSize) {
     const rangePx = this.def.combat.attackRangeTiles * tileSize;
-    return Math.hypot(targetPos.x - this.x, targetPos.y - this.y) <= rangePx;
+    let targetX, targetY, extraRange = 0;
+    
+    if (target.x !== undefined) {
+      targetX = target.x;
+      targetY = target.y;
+      extraRange = tileSize * 0.4; // Радіус юніта
+    } else {
+      targetX = (target.tileX + target.def.size.w / 2) * tileSize;
+      targetY = (target.tileY + target.def.size.h / 2) * tileSize;
+      // Додаємо радіус будівлі (щоб юніт міг атакувати її край)
+      extraRange = Math.max(target.def.size.w, target.def.size.h) * tileSize / 2;
+    }
+
+    return Math.hypot(targetX - this.x, targetY - this.y) <= (rangePx + extraRange);
   }
 
   /**

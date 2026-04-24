@@ -68,10 +68,11 @@ export class EconomySystem {
       // Тренування юнітів
       const readyUnitId = building.tickTraining(dtSec);
       if (readyUnitId) {
-        // Спавн одразу під казармою, але не виходимо за межі карти
-        const mapMaxRow = (this.state.playerZone?.endRow ?? 40) - 1;
+        // Спавн одразу під казармою, але не виходимо за межі зони гравця (щоб не потрапити у воду)
+        // Гарантовано чиста зона (margin = 2) закінчується на endRow - 3
+        const safeMaxRow = (this.state.playerZone?.endRow ?? 40) - 3;
         const spawnX = building.tileX + Math.floor(building.def.size.w / 2);
-        const spawnY = Math.min(mapMaxRow, building.tileY + building.def.size.h);
+        const spawnY = Math.min(safeMaxRow, building.tileY + building.def.size.h);
         bus.emit('cmd:spawnUnit', {
           unitDefId: readyUnitId,
           tileX:    spawnX,

@@ -226,6 +226,7 @@ button {
 }
 
 .start-play {
+  width: 100%;
   min-width: 220px;
   height: 52px;
   padding: 0 26px;
@@ -235,11 +236,44 @@ button {
   font-size: 16px;
   font-weight: 800;
   box-shadow: 0 0 20px rgba(241,196,15,0.26);
+  transition: transform var(--t-fast);
+}
+
+.start-play:active {
+  transform: scale(0.97);
 }
 
 .start-play:disabled {
   opacity: 0.6;
   cursor: wait;
+}
+
+.main-menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.start-btn-secondary {
+  width: 100%;
+  height: 52px;
+  padding: 0 26px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background var(--t-fast), transform var(--t-fast);
+}
+
+.start-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.start-btn-secondary:active {
+  transform: scale(0.97);
 }
 
 .start-controls {

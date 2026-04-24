@@ -1,0 +1,1 @@
+import * as Game from './src/Game.js';

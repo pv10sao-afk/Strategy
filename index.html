@@ -18,15 +18,27 @@
 
   <!-- ══ START MENU ════════════════════════════════ -->
   <div id="start-menu" class="start-menu">
-    <div class="start-shell">
+    <!-- Головне меню -->
+    <div class="start-shell" id="menu-main">
       <div class="start-badge">2D RTS · Vanilla JS</div>
       <h1 class="start-title">ForgeWar</h1>
-      <p class="start-sub">
-        Будуй базу, тренуй армію, ламай оборону ворога і керуй боєм у реальному часі.
-      </p>
+      <div class="main-menu-buttons">
+        <button id="btn-menu-play" class="start-play">Грати</button>
+        <button id="btn-menu-deck" class="start-btn-secondary">Колода</button>
+        <button id="btn-menu-shop" class="start-btn-secondary">Магазин</button>
+        <button id="btn-menu-settings" class="start-btn-secondary">Налаштування</button>
+        <button id="btn-menu-tutorial" class="start-btn-secondary">Навчання</button>
+      </div>
+    </div>
+
+    <!-- Вибір складності -->
+    <div class="start-shell hidden" id="menu-difficulty">
+      <div class="start-badge">2D RTS · Vanilla JS</div>
+      <h1 class="start-title">ForgeWar</h1>
+      <p class="start-sub" style="margin-bottom: 24px;">Оберіть рівень складності:</p>
 
       <div class="start-grid">
-        <button class="difficulty-card difficulty-active" data-difficulty="easy">
+        <button class="difficulty-card" data-difficulty="easy">
           <span class="difficulty-name">Легка</span>
           <span class="difficulty-desc">Повільніший бот, м’який старт</span>
         </button>
@@ -40,18 +52,31 @@
         </button>
       </div>
 
-      <div class="start-settings" style="margin-top: 16px; margin-bottom: 24px;">
-        <label style="display:flex; align-items:center; gap:8px; color:#ccc; font-size:14px; cursor:pointer;">
-          <input type="checkbox" id="chk-instant-build" checked style="width:18px; height:18px;">
+      <div class="start-actions" style="margin-top: 24px;">
+        <button id="btn-back-main" class="start-btn-secondary">Назад</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SETTINGS MODAL ════════════════════════════ -->
+  <div id="settings-modal" class="modal-overlay hidden">
+    <div class="modal-body" style="text-align:center;">
+      <h2 style="color:#fff; margin-top:0;">Налаштування</h2>
+      <div class="start-settings" style="margin: 24px 0; text-align:left;">
+        <label style="display:flex; align-items:center; gap:8px; color:#ccc; font-size:16px; cursor:pointer;">
+          <input type="checkbox" id="chk-instant-build" checked style="width:20px; height:20px;">
           Миттєве будівництво (1 тап замість 2)
         </label>
       </div>
+      <button id="btn-close-settings" class="start-play" style="width:100%;">Закрити</button>
+    </div>
+  </div>
 
-      <div class="start-actions">
-        <button id="btn-start-game" class="start-play">Почати гру</button>
-      </div>
-
-      <div class="start-controls">
+  <!-- ══ TUTORIAL MODAL ════════════════════════════ -->
+  <div id="tutorial-modal" class="modal-overlay hidden">
+    <div class="modal-body">
+      <h2 style="color:#fff; margin-top:0; text-align:center;">Як грати</h2>
+      <div class="start-controls" style="margin: 16px 0; max-height: 50vh; overflow-y: auto;">
         <div class="control-card">
           <span class="control-icon">👆</span>
           <span class="control-title">Тап по юніту</span>
@@ -68,6 +93,7 @@
           <span class="control-desc">Відправляє вибраних юнітів у штурм</span>
         </div>
       </div>
+      <button id="btn-close-tutorial" class="start-play" style="width:100%;">Зрозуміло</button>
     </div>
   </div>
 
@@ -196,10 +222,22 @@
     import { Game } from './src/Game.js';
     const game = new Game();
     const startMenu = document.getElementById('start-menu');
-    const startBtn = document.getElementById('btn-start-game');
+    const menuMain = document.getElementById('menu-main');
+    const menuDifficulty = document.getElementById('menu-difficulty');
+    const btnMenuPlay = document.getElementById('btn-menu-play');
+    const btnMenuDeck = document.getElementById('btn-menu-deck');
+    const btnMenuShop = document.getElementById('btn-menu-shop');
+    const btnMenuSettings = document.getElementById('btn-menu-settings');
+    const btnMenuTutorial = document.getElementById('btn-menu-tutorial');
+    const btnBackMain = document.getElementById('btn-back-main');
+    
+    const settingsModal = document.getElementById('settings-modal');
+    const btnCloseSettings = document.getElementById('btn-close-settings');
+    const tutorialModal = document.getElementById('tutorial-modal');
+    const btnCloseTutorial = document.getElementById('btn-close-tutorial');
+    
     const chkInstant = document.getElementById('chk-instant-build');
     const difficultyCards = [...document.querySelectorAll('[data-difficulty]')];
-    let selectedDifficulty = 'easy';
     let isLaunching = false;
 
     // Відновлення налаштування з localStorage
@@ -207,44 +245,66 @@
       chkInstant.checked = false;
     }
 
-    // ── Вибір складності ────────────────────────────────
-    function selectDifficulty(card) {
-      selectedDifficulty = card.dataset.difficulty ?? 'easy';
-      difficultyCards.forEach((item) => {
-        item.classList.toggle('difficulty-active', item === card);
-      });
-    }
-
-    difficultyCards.forEach((card) => {
-      // click спрацьовує і для миші і для тачу — надійніше за touchend
-      card.addEventListener('click', (e) => {
-        e.preventDefault();
-        selectDifficulty(card);
-      });
+    // ── Навігація по меню ────────────────────────────────
+    btnMenuPlay?.addEventListener('click', () => {
+      menuMain.classList.add('hidden');
+      menuDifficulty.classList.remove('hidden');
     });
 
-    // ── Кнопка старту ───────────────────────────────────
-    startBtn?.addEventListener('click', async () => {
-      if (isLaunching) return;          // запобігаємо подвійному кліку
-      isLaunching = true;
-      startBtn.disabled = true;
-      startBtn.textContent = 'Запуск...';
+    btnBackMain?.addEventListener('click', () => {
+      menuDifficulty.classList.add('hidden');
+      menuMain.classList.remove('hidden');
+    });
 
-      const instantBuild = chkInstant.checked;
-      localStorage.setItem('fw_instant_build', instantBuild);
+    const notifyWIP = () => {
+      const notifyArea = document.getElementById('notify-area');
+      const toast = document.createElement('div');
+      toast.className = 'toast toast-info';
+      toast.textContent = 'В розробці...';
+      notifyArea.appendChild(toast);
+      setTimeout(() => toast.remove(), 2500);
+    };
 
-      startMenu?.classList.add('hidden');
-      try {
-        await game.start({ difficulty: selectedDifficulty, instantBuild });
-      } catch (err) {
-        console.error('[StartMenu] game.start failed:', err);
-        startMenu?.classList.remove('hidden');
-        startBtn.disabled = false;
-        startBtn.textContent = 'Почати гру';
-        isLaunching = false;
-        // скидаємо внутрішній прапор Game, щоб можна було спробувати знову
-        game._started = false;
-      }
+    btnMenuDeck?.addEventListener('click', notifyWIP);
+    btnMenuShop?.addEventListener('click', notifyWIP);
+
+    btnMenuSettings?.addEventListener('click', () => {
+      settingsModal.classList.remove('hidden');
+    });
+    btnCloseSettings?.addEventListener('click', () => {
+      settingsModal.classList.add('hidden');
+    });
+
+    btnMenuTutorial?.addEventListener('click', () => {
+      tutorialModal.classList.remove('hidden');
+    });
+    btnCloseTutorial?.addEventListener('click', () => {
+      tutorialModal.classList.add('hidden');
+    });
+
+    // ── Вибір складності та запуск ───────────────────────────────────
+    difficultyCards.forEach((card) => {
+      card.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (isLaunching) return;
+        
+        isLaunching = true;
+        const selectedDifficulty = card.dataset.difficulty ?? 'easy';
+        
+        // Зберегти налаштування
+        const instantBuild = chkInstant.checked;
+        localStorage.setItem('fw_instant_build', instantBuild);
+
+        startMenu?.classList.add('hidden');
+        try {
+          await game.start({ difficulty: selectedDifficulty, instantBuild });
+        } catch (err) {
+          console.error('[StartMenu] game.start failed:', err);
+          startMenu?.classList.remove('hidden');
+          isLaunching = false;
+          game._started = false;
+        }
+      });
     });
 
     document.getElementById('btn-back-menu')?.addEventListener('click', () => {
