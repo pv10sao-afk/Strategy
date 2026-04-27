@@ -148,7 +148,17 @@ export class Renderer {
     for (let row = startRow; row <= endRow; row++) {
       for (let col = startCol; col <= endCol; col++) {
         const tileId = grid[row]?.[col] ?? 0;
-        const key    = this._tileIdToKey[tileId] ?? 'grass';
+        const baseKey = this._tileIdToKey[tileId] ?? 'grass';
+        let key = baseKey;
+
+        // Вибір випадкового спрайту залежно від координат (детерміновано)
+        if (baseKey === 'grass' || baseKey === 'sand' || baseKey === 'rock') {
+          const varNum = ((row * 13 + col * 7) % 3) + 1;
+          key = `${baseKey}_${varNum}`;
+        } else if (baseKey === 'water') {
+          const varNum = ((row * 11 + col * 17) % 2) + 1;
+          key = `${baseKey}_${varNum}`;
+        }
 
         const x = col * ts + offX;
         const y = row * ts + offY;
@@ -158,7 +168,7 @@ export class Renderer {
         if (img) {
           ctx.drawImage(img, x, y, ts, ts);
         } else {
-          ctx.fillStyle = this._palette[key] ?? '#4a7c59';
+          ctx.fillStyle = this._palette[baseKey] ?? '#4a7c59';
           ctx.fillRect(x, y, ts, ts);
 
           // Міст — намалювати зверху
